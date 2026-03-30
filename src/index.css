@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@theme {
+  --color-primary-blue: #2BAFF2;
+  --color-deep-blue: #1F57F5;
+  --color-accent-cyan: #00DDFF;
+  --color-dark-base: #05090E;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-dark-base antialiased;
+  }
+}
