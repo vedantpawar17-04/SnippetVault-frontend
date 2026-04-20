@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutGrid, Code, LogOut, Heart } from "lucide-react";
+import { LayoutGrid, Code, LogOut, Heart, Folder } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
@@ -9,6 +9,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAuthenticated = !!user;
+  const MotionNav = motion.nav;
+  const MotionButton = motion.button;
 
   const handleLogout = () => {
     logout();
@@ -16,7 +18,7 @@ const Navbar = () => {
   };
 
   return (
-    <motion.nav
+    <MotionNav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className="sticky top-0 left-0 right-0 bg-white border-b border-gray-100 px-6 py-3 z-50"
@@ -62,8 +64,18 @@ const Navbar = () => {
                 <Heart size={16} fill={location.pathname === "/favorites" ? "currentColor" : "none"} />
                 Favorites
               </Link>
+              <Link
+                to="/collections"
+                className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${location.pathname === "/collections"
+                  ? "text-teal-600"
+                  : "text-gray-600 hover:text-teal-600"
+                  }`}
+              >
+                <Folder size={16} />
+                Collections
+              </Link>
               <div className="flex items-center gap-4">
-                <motion.button
+                <MotionButton
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
@@ -74,7 +86,7 @@ const Navbar = () => {
                     className="group-hover:translate-x-0.5 transition-transform"
                   />
                   <span>Logout</span>
-                </motion.button>
+                </MotionButton>
               </div>
             </div>
           ) : (
@@ -102,7 +114,7 @@ const Navbar = () => {
           </button>
         </div>
       </div>
-    </motion.nav>
+    </MotionNav>
   );
 };
 

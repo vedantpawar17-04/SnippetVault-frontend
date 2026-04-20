@@ -3,9 +3,10 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const ExploreSnippetCard = ({ snippet, index }) => {
+const ExploreSnippetCard = ({ snippet, index, onTagClick }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const MotionDiv = motion.div;
 
   const {
     _id,
@@ -14,13 +15,14 @@ const ExploreSnippetCard = ({ snippet, index }) => {
     likes = 0,
     description,
     user: snippetUser,
+    tags = [],
   } = snippet;
 
   const authorName = snippetUser?.username || "Unknown";
   const isOwner = currentUser?._id === (snippetUser?._id || snippetUser);
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
@@ -62,6 +64,26 @@ const ExploreSnippetCard = ({ snippet, index }) => {
           {description}
         </p>
 
+        {/* Tags */}
+        {Array.isArray(tags) && tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {tags.slice(0, 6).map((tag) => (
+              <button
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(tag);
+                }}
+                className="text-[11px] font-extrabold text-gray-600 hover:text-teal-600 bg-slate-50 border border-gray-100 px-2.5 py-1 rounded-full transition-colors"
+                title={`Filter by #${tag}`}
+                type="button"
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Author */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100">
@@ -92,7 +114,7 @@ const ExploreSnippetCard = ({ snippet, index }) => {
           </button>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

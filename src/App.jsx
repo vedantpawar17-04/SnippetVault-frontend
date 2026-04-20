@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SnippetProvider } from "./context/SnippetContext";
+import { ToastProvider } from "./context/ToastContext";
 import Navbar from "./components/Navbar";
 import Landing from "./pages/LandingPage";
 import Login from "./pages/LoginPage";
@@ -17,6 +18,7 @@ import CreateSnippetPage from "./pages/CreateSnippetPage";
 import EditSnippetPage from "./pages/EditSnippetPage";
 import SnippetDetailPage from "./pages/SnippetDetailPage";
 import SnippetSearchPage from "./pages/SnippetSearchPage";
+import CollectionsPage from "./pages/CollectionsPage";
 import { AnimatePresence} from "framer-motion";
 
 const ProtectedRoute = ({ children }) => {
@@ -54,6 +56,14 @@ const AppContent = () => {
               }
             />
             <Route
+              path="/collections"
+              element={
+                <ProtectedRoute>
+                  <CollectionsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/create-snippet"
               element={
                 <ProtectedRoute>
@@ -63,11 +73,7 @@ const AppContent = () => {
             />
             <Route
               path="/snippet/:id"
-              element={
-                <ProtectedRoute>
-                  <SnippetDetailPage />
-                </ProtectedRoute>
-              }
+              element={<SnippetDetailPage />}
             />
             <Route
               path="/edit-snippet/:id"
@@ -90,11 +96,13 @@ const AppContent = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <SnippetProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </SnippetProvider>
+      <ToastProvider>
+        <SnippetProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SnippetProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

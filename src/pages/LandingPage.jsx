@@ -13,6 +13,8 @@ import { motion } from "framer-motion";
 import previewImage from "../public/image.png"; // adjust path
 
 const Landing = () => {
+  const MotionDiv = motion.div;
+  const MotionSpan = motion.span;
   return (
     <div>
       {/* Hero Section */}
@@ -22,20 +24,20 @@ const Landing = () => {
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-cyan/10 blur-[120px] rounded-full" />
         </div>
 
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="max-w-4xl mx-auto text-center"
         >
-          <motion.span
+          <MotionSpan
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
             className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest uppercase bg-primary-blue/10 text-primary-blue rounded-full border border-primary-blue/20"
           >
             The Future of Code Management
-          </motion.span>
+          </MotionSpan>
 
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-dark-base mb-8 leading-[1.1]">
             Your Code Snippets, <br />
@@ -64,7 +66,7 @@ const Landing = () => {
               View Demo
             </Link>
           </div>
-        </motion.div>
+        </MotionDiv>
       </section>
 
       {/* Image Only with Soft Glow */}

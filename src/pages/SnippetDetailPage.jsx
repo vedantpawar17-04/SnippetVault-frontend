@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSnippets } from "../context/SnippetContext";
 import api from "../services/api";
+import { useToast } from "../context/ToastContext";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import {
@@ -13,14 +14,19 @@ import {
   ChevronLeft,
   Heart,
   Terminal,
+  Share2,
+  History,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Modal from "../components/ui/Modal";
+import ConfirmModal from "../components/ui/ConfirmModal";
 
 const SnippetDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { likeSnippet, toggleFavoriteSnippet } = useSnippets();
+  const { pushToast } = useToast();
 
   const [snippet, setSnippet] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +34,21 @@ const SnippetDetailPage = () => {
 
   const [copiedMain, setCopiedMain] = useState(false);
   const [copiedSyntax, setCopiedSyntax] = useState(false);
+  void motion;
+
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const [restoreConfirm, setRestoreConfirm] = useState({ open: false, version: null });
+  const [restoring, setRestoring] = useState(false);
+
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collections, setCollections] = useState([]);
+  const [collectionName, setCollectionName] = useState("");
+  const [creatingCollection, setCreatingCollection] = useState(false);
+  const [addingToCollection, setAddingToCollection] = useState(false);
+
 
   // Language Normalizer
   const getLanguage = (lang) => {
@@ -50,7 +71,10 @@ const SnippetDetailPage = () => {
   useEffect(() => {
     const fetchSnippet = async () => {
       try {
-        const { data } = await api.get(`/snippets/${id}`);
+        const token = localStorage.getItem("snippetvault_token");
+        const { data } = await api.get(
+          token ? `/snippets/${id}` : `/public/snippet/${id}`,
+        );
         setSnippet(data);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load snippet");
@@ -61,7 +85,6 @@ const SnippetDetailPage = () => {
 
     fetchSnippet();
   }, [id]);
-
   const handleLike = async () => {
     const result = await likeSnippet(id);
     if (result?.success) {
@@ -87,6 +110,112 @@ const SnippetDetailPage = () => {
     if (type === "syntax") {
       setCopiedSyntax(true);
       setTimeout(() => setCopiedSyntax(false), 1500);
+    }
+  };
+
+  const handleShare = async () => {
+    if (snippet?.status !== "public") {
+      pushToast({ type: "error", message: "Make this snippet public to share" });
+      return;
+    }
+
+    const url = `${window.location.origin}/snippet/${id}`;
+    await navigator.clipboard.writeText(url);
+    pushToast({ type: "success", message: "Share link copied" });
+  };
+
+  const openHistory = async () => {
+    if (!user) {
+      pushToast({ type: "error", message: "Login required" });
+      return;
+    }
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+    try {
+      const { data } = await api.get(`/snippets/${id}/history`);
+      setVersions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      pushToast({
+        type: "error",
+        message: err.response?.data?.message || "Failed to load history",
+      });
+      setVersions([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const openCollections = async () => {
+    if (!user) {
+      pushToast({ type: "error", message: "Login required" });
+      return;
+    }
+    setCollectionsOpen(true);
+    setCollectionsLoading(true);
+    try {
+      const { data } = await api.get("/collections");
+      setCollections(Array.isArray(data) ? data : []);
+    } catch (err) {
+      pushToast({
+        type: "error",
+        message: err.response?.data?.message || "Failed to load collections",
+      });
+      setCollections([]);
+    } finally {
+      setCollectionsLoading(false);
+    }
+  };
+
+  const createCollection = async () => {
+    const trimmed = collectionName.trim();
+    if (!trimmed) return;
+    setCreatingCollection(true);
+    try {
+      const { data } = await api.post("/collections", { name: trimmed });
+      setCollections((prev) => [data, ...prev]);
+      setCollectionName("");
+      pushToast({ type: "success", message: "Collection created" });
+    } catch (err) {
+      pushToast({
+        type: "error",
+        message: err.response?.data?.message || "Failed to create collection",
+      });
+    } finally {
+      setCreatingCollection(false);
+    }
+  };
+
+  const addToCollection = async (collectionId) => {
+    setAddingToCollection(true);
+    try {
+      await api.post(`/collections/${collectionId}/add`, { snippetId: id });
+      pushToast({ type: "success", message: "Saved to collection" });
+      setCollectionsOpen(false);
+    } catch (err) {
+      pushToast({
+        type: "error",
+        message: err.response?.data?.message || "Failed to add to collection",
+      });
+    } finally {
+      setAddingToCollection(false);
+    }
+  };
+
+  const restoreVersion = async (versionId) => {
+    setRestoring(true);
+    try {
+      await api.post(`/snippets/${id}/restore/${versionId}`);
+      const { data } = await api.get(`/snippets/${id}`);
+      setSnippet(data);
+      pushToast({ type: "success", message: "Version restored" });
+      setRestoreConfirm({ open: false, version: null });
+    } catch (err) {
+      pushToast({
+        type: "error",
+        message: err.response?.data?.message || "Failed to restore version",
+      });
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -116,6 +245,115 @@ const SnippetDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f6f8]">
+      <Modal
+        open={historyOpen}
+        title="Version History"
+        onClose={() => setHistoryOpen(false)}
+        maxWidthClassName="max-w-2xl"
+      >
+        {historyLoading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500"></div>
+          </div>
+        ) : versions.length === 0 ? (
+          <p className="text-sm font-semibold text-gray-500">No versions yet.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {versions.map((v) => (
+              <div
+                key={v._id}
+                className="flex items-center justify-between gap-4 rounded-xl border border-gray-100 bg-slate-50/40 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-gray-800 truncate">{v.title}</p>
+                  <p className="text-xs font-semibold text-gray-500">
+                    {v.language} • {new Date(v.updatedAt).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setRestoreConfirm({ open: true, version: v })}
+                  className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 font-extrabold hover:border-teal-200 hover:text-teal-700 transition-colors"
+                  type="button"
+                >
+                  Restore
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={collectionsOpen}
+        title="Save to Collection"
+        onClose={() => setCollectionsOpen(false)}
+        maxWidthClassName="max-w-2xl"
+      >
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row gap-3">
+            <input
+              value={collectionName}
+              onChange={(e) => setCollectionName(e.target.value)}
+              placeholder="New collection name"
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500/10 focus:border-teal-500"
+            />
+            <button
+              onClick={createCollection}
+              disabled={creatingCollection}
+              className="px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-extrabold shadow-lg shadow-teal-100 disabled:opacity-60"
+              type="button"
+            >
+              {creatingCollection ? "Creating..." : "Create"}
+            </button>
+          </div>
+
+          {collectionsLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500"></div>
+            </div>
+          ) : collections.length === 0 ? (
+            <p className="text-sm font-semibold text-gray-500">
+              No collections yet. Create one above.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {collections.map((c) => (
+                <div
+                  key={c._id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-slate-50/40 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-gray-800 truncate">{c.name}</p>
+                    <p className="text-xs font-semibold text-gray-500">
+                      {c.snippets?.length || 0} snippets
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => addToCollection(c._id)}
+                    disabled={addingToCollection}
+                    className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 font-extrabold hover:border-teal-200 hover:text-teal-700 transition-colors disabled:opacity-60"
+                    type="button"
+                  >
+                    {addingToCollection ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <ConfirmModal
+        open={restoreConfirm.open}
+        title="Restore version?"
+        message="This will overwrite the current snippet content. A backup of the current version will be saved automatically."
+        confirmText="Restore"
+        cancelText="Cancel"
+        confirmVariant="primary"
+        loading={restoring}
+        onClose={() => setRestoreConfirm({ open: false, version: null })}
+        onConfirm={() => restoreVersion(restoreConfirm.version?._id)}
+      />
 
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
@@ -151,6 +389,22 @@ const SnippetDetailPage = () => {
           <p className="text-gray-600 text-lg leading-relaxed font-medium">
             {snippet.description || "No description provided."}
           </p>
+
+          {Array.isArray(snippet.tags) && snippet.tags.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {snippet.tags.slice(0, 10).map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => navigate(`/search?tags=${encodeURIComponent(tag)}`)}
+                  className="text-xs font-extrabold text-gray-700 bg-white border border-gray-200 hover:border-teal-200 hover:text-teal-700 px-3 py-1.5 rounded-full transition-colors"
+                  type="button"
+                  title={`Search #${tag}`}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* MAIN CODE EDITOR */}
@@ -262,38 +516,73 @@ const SnippetDetailPage = () => {
               </button>
             )}
 
-            <button
-              onClick={handleFavorite}
-              className={`flex items-center gap-2 font-bold text-sm ${
-                snippet.isFavorite
-                  ? "text-red-500"
-                  : "text-gray-400 hover:text-red-500"
-              }`}
-            >
-              <Heart
-                size={18}
-                fill={snippet.isFavorite ? "currentColor" : "none"}
-              />
-              {snippet.isFavorite ? "Saved" : "Favorite"}
-            </button>
-
-            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
+            {user && (
               <button
-                onClick={handleLike}
-                className="text-gray-500 hover:text-teal-500"
+                onClick={handleFavorite}
+                className={`flex items-center gap-2 font-bold text-sm ${
+                  snippet.isFavorite
+                    ? "text-red-500"
+                    : "text-gray-400 hover:text-red-500"
+                }`}
               >
-                <ThumbsUp size={16} />
+                <Heart
+                  size={18}
+                  fill={snippet.isFavorite ? "currentColor" : "none"}
+                />
+                {snippet.isFavorite ? "Saved" : "Favorite"}
               </button>
-              <span className="text-sm font-bold text-gray-700">
-                {snippet.likes}
-              </span>
-            </div>
+            )}
+
+            {user && (
+              <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
+                <button
+                  onClick={handleLike}
+                  className="text-gray-500 hover:text-teal-500"
+                >
+                  <ThumbsUp size={16} />
+                </button>
+                <span className="text-sm font-bold text-gray-700">
+                  {snippet.likes}
+                </span>
+              </div>
+            )}
           </div>
 
-          <button className="flex items-center gap-2 text-gray-400 font-bold text-sm cursor-not-allowed">
-            <Download size={18} />
-            Export
-          </button>
+          <div className="flex items-center gap-3">
+            {user && (
+              <button
+                onClick={openCollections}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:border-teal-200 hover:text-teal-700 font-extrabold text-sm transition-colors"
+                type="button"
+              >
+                Save
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={openHistory}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:border-teal-200 hover:text-teal-700 font-extrabold text-sm transition-colors"
+                type="button"
+              >
+                <History size={18} />
+                History
+              </button>
+            )}
+
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:border-teal-200 hover:text-teal-700 font-extrabold text-sm transition-colors"
+              type="button"
+            >
+              <Share2 size={18} />
+              Share
+            </button>
+
+            <button className="flex items-center gap-2 text-gray-400 font-bold text-sm cursor-not-allowed">
+              <Download size={18} />
+              Export
+            </button>
+          </div>
         </div>
       </main>
     </div>

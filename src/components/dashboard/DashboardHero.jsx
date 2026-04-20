@@ -1,31 +1,25 @@
 import React from "react";
-import { Plus, LogOut } from "lucide-react";
+import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const DashboardHero = ({ title = "My Snippets" }) => {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  const MotionH1 = motion.h1;
+  const MotionDiv = motion.div;
 
   return (
     <div className="w-full bg-slate-50/50 pt-16 pb-12 px-6 md:px-10">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <motion.h1
+        <MotionH1
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="text-5xl font-extrabold text-gray-800 tracking-tight"
         >
           {title}
-        </motion.h1>
+        </MotionH1>
 
         <div className="flex items-center gap-4">
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
           >
@@ -37,7 +31,7 @@ const DashboardHero = ({ title = "My Snippets" }) => {
               <span>Create Snippet</span>
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
-          </motion.div>
+          </MotionDiv>
         </div>
       </div>
     </div>

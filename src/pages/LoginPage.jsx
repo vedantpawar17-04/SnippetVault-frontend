@@ -17,6 +17,7 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  void motion;
 
   const { login } = useAuth();
   const navigate = useNavigate();

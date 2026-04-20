@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Grid,
@@ -9,53 +9,73 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ExploreSnippetCard from "../components/explore/ExploreSnippetCard";
+import TagsInput from "../components/ui/TagsInput";
 import api from "../services/api";
+import { useSearchParams } from "react-router-dom";
 
 const SnippetSearchPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Code Snippets");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedTags, setSelectedTags] = useState([]);
+  void motion;
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    const tags = searchParams.get("tags");
+    if (q) setSearchQuery(q);
+    if (tags) setSelectedTags(tags.split(",").map((t) => t.trim()).filter(Boolean));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (debouncedQuery) next.set("q", debouncedQuery);
+    if (selectedTags.length > 0) next.set("tags", selectedTags.join(","));
+    setSearchParams(next, { replace: true });
+  }, [debouncedQuery, selectedTags, setSearchParams]);
 
   useEffect(() => {
     const fetchSnippets = async () => {
+      setLoading(true);
       try {
-        const { data } = await api.get("/snippets");
-        setSnippets(data);
+        const { data } = await api.get("/snippets", {
+          params: {
+            q: debouncedQuery || undefined,
+            tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
+            status: "public",
+            sort: "newest",
+            page: currentPage,
+            limit: itemsPerPage,
+          },
+        });
+
+        setSnippets(data?.items || []);
+        setTotalPages(data?.totalPages || 1);
       } catch (error) {
         console.error("Error fetching snippets:", error);
+        setSnippets([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
+
     fetchSnippets();
-  }, []);
-
-  // Filter snippets based on search query and public status
-  const filteredSnippets = useMemo(() => {
-    return snippets.filter((snippet) => {
-      // Only show public snippets
-      if (snippet.status !== "public") return false;
-      
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        snippet.title.toLowerCase().includes(searchLower) ||
-        (snippet.description &&
-          snippet.description.toLowerCase().includes(searchLower)) ||
-        snippet.language.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [snippets, searchQuery]);
-
-  // Handle pagination calculation
-  const totalPages = Math.ceil(filteredSnippets.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedSnippets = filteredSnippets.slice(
-    startIndex,
-    startIndex + itemsPerPage,
-  );
+  }, [debouncedQuery, currentPage, itemsPerPage, selectedTags]);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -71,6 +91,7 @@ const SnippetSearchPage = () => {
     setSearchQuery("");
     setItemsPerPage(5);
     setCurrentPage(1);
+    setSelectedTags([]);
   };
 
   return (
@@ -145,6 +166,16 @@ const SnippetSearchPage = () => {
       {/* Filters & Results */}
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
+          <div className="w-full max-w-2xl">
+            <TagsInput
+              value={selectedTags}
+              onChange={(next) => {
+                setSelectedTags(next);
+                setCurrentPage(1);
+              }}
+              placeholder="Filter by tags (comma or Enter)"
+            />
+          </div>
           <div className="flex items-center gap-4 ml-auto">
             <button
               onClick={handleReset}
@@ -179,16 +210,22 @@ const SnippetSearchPage = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
               </div>
             ) : (
-              paginatedSnippets.map((snippet, index) => (
+              snippets.map((snippet, index) => (
                 <ExploreSnippetCard
                   key={snippet._id}
                   snippet={snippet}
                   index={index}
+                  onTagClick={(tag) => {
+                    setSelectedTags((prev) =>
+                      prev.includes(tag) ? prev : [...prev, tag]
+                    );
+                    setCurrentPage(1);
+                  }}
                 />
               ))
             )}
           </AnimatePresence>
-          {!loading && paginatedSnippets.length === 0 && (
+          {!loading && snippets.length === 0 && (
             <div className="col-span-full py-20 text-center">
               <p className="text-gray-400 font-medium">
                 No snippets found matching your search.

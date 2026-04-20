@@ -12,7 +12,7 @@ export const SnippetProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await api.get("/snippets");
-      setSnippets(data);
+      setSnippets(data?.items || data);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch snippets");
@@ -147,4 +147,5 @@ export const SnippetProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSnippets = () => useContext(SnippetContext);

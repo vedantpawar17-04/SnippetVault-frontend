@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 
 const StatCard = ({ title, value, delay = 0 }) => {
   const [count, setCount] = useState(0);
+  const MotionDiv = motion.div;
 
   useEffect(() => {
     // Simple count animation
@@ -25,7 +26,7 @@ const StatCard = ({ title, value, delay = 0 }) => {
   }, [value]);
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
@@ -49,7 +50,7 @@ const StatCard = ({ title, value, delay = 0 }) => {
           See All
         </a>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

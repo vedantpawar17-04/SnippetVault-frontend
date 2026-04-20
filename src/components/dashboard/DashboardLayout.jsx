@@ -1,16 +1,17 @@
 import { motion } from "framer-motion";
 
 const DashboardLayout = ({ children }) => {
+  const MotionMain = motion.main;
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-orange-100 selection:text-orange-600">
-      <motion.main
+      <MotionMain
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         className="flex flex-col w-full"
       >
         {children}
-      </motion.main>
+      </MotionMain>
 
       {/* Subtle background decoration */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">

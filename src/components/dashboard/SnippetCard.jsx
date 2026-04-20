@@ -9,6 +9,8 @@ const SnippetCard = ({ snippet, index }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { deleteSnippet, likeSnippet, toggleFavoriteSnippet } = useSnippets();
+  const MotionDiv = motion.div;
+  const MotionButton = motion.button;
 
   const {
     _id,
@@ -19,6 +21,7 @@ const SnippetCard = ({ snippet, index }) => {
     user: snippetUser,
     isFavorite = false,
     status = "public",
+    tags = [],
     hasLiked = false,
     likedBy = [],
   } = snippet;
@@ -49,7 +52,7 @@ const SnippetCard = ({ snippet, index }) => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.4 }}
@@ -82,6 +85,17 @@ const SnippetCard = ({ snippet, index }) => {
             >
               {language}
             </span>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
+                status === "private"
+                  ? "bg-rose-50 text-rose-600 border border-rose-100"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+              }`}
+              title={status === "private" ? "Private snippet" : "Public snippet"}
+            >
+              {status === "private" ? <Lock size={12} /> : <Globe size={12} />}
+              {status}
+            </span>
           </div>
         </div>
 
@@ -90,6 +104,19 @@ const SnippetCard = ({ snippet, index }) => {
           <p className="text-gray-500 text-sm leading-relaxed line-clamp-3">
             {description}
           </p>
+
+          {Array.isArray(tags) && tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.slice(0, 6).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[11px] font-extrabold text-gray-600 bg-slate-50 border border-gray-100 px-2.5 py-1 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-cyan-200 overflow-hidden border border-gray-100">
@@ -137,7 +164,7 @@ const SnippetCard = ({ snippet, index }) => {
               </button>
             </>
           )}
-          <motion.button
+          <MotionButton
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate(`/snippet/${_id}`)}
@@ -145,10 +172,10 @@ const SnippetCard = ({ snippet, index }) => {
           >
             <Eye size={16} />
             View
-          </motion.button>
+          </MotionButton>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

@@ -6,6 +6,7 @@ import SnippetCard from "../components/dashboard/SnippetCard";
 
 const FavoritesPage = () => {
   const { snippets, loading, fetchFavoriteSnippets } = useSnippets();
+  const MotionDiv = motion.div;
 
   useEffect(() => {
     fetchFavoriteSnippets();
@@ -33,7 +34,7 @@ const FavoritesPage = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-400"></div>
           </div>
         ) : snippets.length > 0 ? (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -46,7 +47,7 @@ const FavoritesPage = () => {
                 index={index}
               />
             ))}
-          </motion.div>
+          </MotionDiv>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Heart size={48} className="text-red-200 mb-4" />

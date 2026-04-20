@@ -3,12 +3,18 @@ import { ChevronDown, Save, X, AlertCircle, Globe, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import MockEditor from "../components/snippets/MockEditor";
+import TagsInput from "../components/ui/TagsInput";
 import { useSnippets } from "../context/SnippetContext";
+import { useToast } from "../context/ToastContext";
 import { LANGUAGES } from "../constants/languages";
 
 const CreateSnippetPage = () => {
   const navigate = useNavigate();
   const { createSnippet } = useSnippets();
+  const { pushToast } = useToast();
+  const MotionH1 = motion.h1;
+  const MotionMain = motion.main;
+  const MotionButton = motion.button;
 
   const [title, setTitle] = useState("");
   const [selectedLangId, setSelectedLangId] = useState("");
@@ -16,6 +22,7 @@ const CreateSnippetPage = () => {
   const [syntaxCode, setSyntaxCode] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("public");
+  const [tags, setTags] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -38,9 +45,11 @@ const CreateSnippetPage = () => {
       syntaxCode: syntaxCode || "",
       description,
       status,
+      tags,
     });
 
     if (result.success) {
+      pushToast({ type: "success", message: "Snippet created" });
       navigate("/dashboard");
     } else {
       setError(result.message);
@@ -53,13 +62,13 @@ const CreateSnippetPage = () => {
       <div className="w-full bg-slate-50/50 pt-16 pb-12 px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div />
-          <motion.h1
+          <MotionH1
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-extrabold text-gray-800 tracking-tight text-center flex-1"
           >
             Create New Snippet
-          </motion.h1>
+          </MotionH1>
           <button
             onClick={() => navigate("/dashboard")}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -69,7 +78,7 @@ const CreateSnippetPage = () => {
         </div>
       </div>
 
-      <motion.main
+      <MotionMain
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -159,6 +168,13 @@ const CreateSnippetPage = () => {
               />
             </div>
 
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-gray-800 ml-1">
+                Tags
+              </label>
+              <TagsInput value={tags} onChange={setTags} />
+            </div>
+
             <div className="flex flex-col gap-4">
               <label className="text-sm font-bold text-gray-800 ml-1">
                 Visibility
@@ -210,7 +226,7 @@ const CreateSnippetPage = () => {
           )}
 
           <div className="flex justify-end gap-4 pt-4">
-            <motion.button
+            <MotionButton
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSubmit}
@@ -219,10 +235,10 @@ const CreateSnippetPage = () => {
             >
               <Save size={20} />
               {loading ? "Saving..." : "Save Snippet"}
-            </motion.button>
+            </MotionButton>
           </div>
         </div>
-      </motion.main>
+      </MotionMain>
     </div>
   );
 };

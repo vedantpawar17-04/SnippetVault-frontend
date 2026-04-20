@@ -24,6 +24,7 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  void motion;
 
   const { signup } = useAuth();
   const navigate = useNavigate();
