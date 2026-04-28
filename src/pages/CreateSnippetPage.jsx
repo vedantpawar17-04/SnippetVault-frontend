@@ -1,12 +1,15 @@
-import React, { useState } from "react";
-import { ChevronDown, Save, X, AlertCircle, Globe, Lock } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { ChevronDown, Save, X, AlertCircle, Globe, Lock, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import MockEditor from "../components/snippets/MockEditor";
+import AnalysisSummaryCard from "../components/snippets/AnalysisSummaryCard";
+import AISuggestionCard from "../components/snippets/AISuggestionCard";
 import TagsInput from "../components/ui/TagsInput";
 import { useSnippets } from "../context/SnippetContext";
 import { useToast } from "../context/ToastContext";
 import { LANGUAGES } from "../constants/languages";
+import api from "../services/api";
 
 const CreateSnippetPage = () => {
   const navigate = useNavigate();
@@ -15,6 +18,8 @@ const CreateSnippetPage = () => {
   const MotionH1 = motion.h1;
   const MotionMain = motion.main;
   const MotionButton = motion.button;
+  const MotionSecondaryButton = motion.button;
+  const reviewSectionRef = useRef(null);
 
   const [title, setTitle] = useState("");
   const [selectedLangId, setSelectedLangId] = useState("");
@@ -25,6 +30,106 @@ const CreateSnippetPage = () => {
   const [tags, setTags] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [assistLoading, setAssistLoading] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
+  const [lastReviewedSignature, setLastReviewedSignature] = useState("");
+
+  const selectedLanguageName =
+    LANGUAGES.find((l) => l.id === selectedLangId)?.name || "Editor";
+  const draftSignature = JSON.stringify({
+    title,
+    language: selectedLanguageName,
+    code,
+    syntaxCode,
+    description,
+  });
+  const canSuggestFix =
+    !!code &&
+    !!selectedLangId &&
+    analysis?.status === "completed" &&
+    analysis?.isBugFree === false;
+  const canSave =
+    !!title &&
+    !!code &&
+    !!selectedLangId &&
+    !reviewLoading &&
+    lastReviewedSignature === draftSignature &&
+    analysis?.status === "completed" &&
+    analysis?.isBugFree === true;
+
+  const handleReview = async () => {
+    if (!code || !selectedLangId) {
+      setError("Add language and code first to run AI Review.");
+      return;
+    }
+
+    setReviewLoading(true);
+    setError("");
+    setSuggestion(null);
+
+    try {
+      const { data } = await api.post("/snippets/review", {
+        title,
+        language: selectedLanguageName,
+        code,
+        syntaxCode,
+        description,
+      });
+
+      setAnalysis(data);
+      setLastReviewedSignature(draftSignature);
+      setTimeout(() => {
+        reviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+      pushToast({
+        type: data?.isBugFree ? "success" : "error",
+        message: data?.summary || "AI review completed",
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to run AI review");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleSuggestFix = async () => {
+    if (!canSuggestFix) {
+      setError("Run AI Review first. Fix suggestions are available only when issues are found.");
+      return;
+    }
+
+    setAssistLoading(true);
+    setError("");
+
+    try {
+      const { data } = await api.post("/snippets/assist", {
+        title,
+        language: selectedLanguageName,
+        code,
+        syntaxCode,
+        description,
+      });
+
+      setSuggestion(data);
+      pushToast({ type: "success", message: data.summary || "AI suggestion ready" });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to generate AI suggestion");
+    } finally {
+      setAssistLoading(false);
+    }
+  };
+
+  const handleApplySuggestion = () => {
+    if (!suggestion) return;
+    setCode(suggestion.correctedCode || code);
+    setSyntaxCode(suggestion.correctedSyntaxCode || "");
+    setAnalysis(null);
+    setLastReviewedSignature("");
+    setSuggestion(null);
+    pushToast({ type: "success", message: "Suggested fix applied to the editors" });
+  };
 
   const handleSubmit = async () => {
     if (!title || !code || !selectedLangId) {
@@ -32,14 +137,17 @@ const CreateSnippetPage = () => {
       return;
     }
 
+    if (!canSave) {
+      setError("Save is locked until AI Review says the latest code is bug-free.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
-    const selectedLang = LANGUAGES.find((l) => l.id === selectedLangId);
-
     const result = await createSnippet({
       title,
-      language: selectedLang?.name || "Plain Text",
+      language: selectedLanguageName || "Plain Text",
       syntax: null,
       code,
       syntaxCode: syntaxCode || "",
@@ -49,8 +157,13 @@ const CreateSnippetPage = () => {
     });
 
     if (result.success) {
-      pushToast({ type: "success", message: "Snippet created" });
-      navigate("/dashboard");
+      const nextAnalysis = result.data?.analysis || null;
+      setAnalysis(nextAnalysis);
+      pushToast({
+        type: nextAnalysis?.isBugFree === false ? "error" : "success",
+        message: nextAnalysis?.summary || "Snippet created",
+      });
+      navigate(`/snippet/${result.data._id}`);
     } else {
       setError(result.message);
       setLoading(false);
@@ -131,10 +244,7 @@ const CreateSnippetPage = () => {
             <MockEditor
               value={code}
               onChange={setCode}
-              language={
-                LANGUAGES.find((l) => l.id === selectedLangId)?.name ||
-                "Editor"
-              }
+              language={selectedLanguageName}
             />
           </div>
 
@@ -144,15 +254,43 @@ const CreateSnippetPage = () => {
                 Syntax Code
               </label>
               <span className="text-xs text-gray-400 font-medium">
-                (Optional - only shown if needed)
+                (Optional - short usage example, not full file)
               </span>
             </div>
             <MockEditor
               value={syntaxCode}
               onChange={setSyntaxCode}
-              placeholder="// Enter call syntax or usage example here..."
+              language={selectedLanguageName || "Usage"}
+              placeholder="// Example: useEffect(() => { fetchData(); }, [userId])"
             />
           </div>
+
+          <div ref={reviewSectionRef}>
+            <AnalysisSummaryCard
+              analysis={analysis}
+              actionLabel={
+                canSuggestFix
+                  ? suggestion
+                    ? "Apply Fix"
+                    : "Suggest Fix"
+                  : undefined
+              }
+              actionLoadingLabel={suggestion ? "Applying..." : "Generating..."}
+              onAction={suggestion ? handleApplySuggestion : handleSuggestFix}
+              actionDisabled={!canSuggestFix}
+              actionLoading={assistLoading}
+            />
+          </div>
+
+          {suggestion && (
+            <AISuggestionCard
+              suggestion={suggestion}
+              loading={assistLoading}
+              onGenerate={handleSuggestFix}
+              onApply={handleApplySuggestion}
+              disabled={!canSuggestFix}
+            />
+          )}
 
           <section className="flex flex-col gap-8">
             <h2 className="text-xl font-bold text-gray-800">Snippet Details</h2>
@@ -226,12 +364,22 @@ const CreateSnippetPage = () => {
           )}
 
           <div className="flex justify-end gap-4 pt-4">
+            <MotionSecondaryButton
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleReview}
+              disabled={reviewLoading}
+              className="px-6 py-3 bg-white border border-slate-200 hover:border-sky-300 text-slate-700 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-70"
+            >
+              <Sparkles size={18} />
+              {reviewLoading ? "Reviewing..." : "AI Review"}
+            </MotionSecondaryButton>
             <MotionButton
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSubmit}
-              disabled={loading}
-              className="px-10 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 transition-all flex items-center gap-2 disabled:opacity-70"
+              disabled={loading || !canSave}
+              className="px-10 py-3 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-70 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200"
             >
               <Save size={20} />
               {loading ? "Saving..." : "Save Snippet"}

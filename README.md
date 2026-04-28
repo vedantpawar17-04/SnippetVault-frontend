@@ -1,6 +1,6 @@
 # SnippetVault
 
-A modern, full-stack code snippet management application that allows developers to store, organize, share, and discover code snippets with syntax highlighting and social features.
+SnippetVault is a modern, full-stack code snippet manager for storing, organizing, and discovering code snippets with syntax highlighting and social/workflow features.
 
 ## Table of Contents
 
@@ -9,319 +9,302 @@ A modern, full-stack code snippet management application that allows developers 
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [API Documentation](#api-documentation)
 - [Environment Variables](#environment-variables)
+- [API Documentation](#api-documentation)
 - [Available Scripts](#available-scripts)
-- [Database Models](#database-models)
+- [Data Models](#data-models)
 - [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
 
-##  Overview
+## Overview
 
-SnippetVault is a comprehensive platform for managing code snippets with features like:
-- User authentication and authorization
-- Public and private snippet visibility
-- Syntax highlighting for multiple programming languages
-- Like and favorite functionality
-- Search and filter capabilities
-- Responsive design with modern UI/UX
+SnippetVault helps you manage snippets end-to-end:
+- Create/edit/delete snippets with language + syntax highlighting
+- Run AI Review on snippet drafts before saving
+- Unlock AI Fix suggestions only when review finds issues
+- Keep snippets public or private
+- Search, filter, and sort snippets (including tag filtering)
+- Save snippets to favorites and collections
+- Track changes via version history and restore older versions
 
-##  Features
+## Features
 
 ### User Features
-- **Authentication**: Secure signup/login with JWT tokens
-- **Snippet Management**: Create, edit, delete, and organize code snippets
-- **Visibility Control**: Set snippets as public or private
-- **Social Interactions**: Like and favorite snippets
-- **Search & Filter**: Find snippets by title, description, or language
-- **Syntax Highlighting**: Beautiful code display with react-syntax-highlighter
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Authentication**: JWT-based signup/login
+- **Snippets**: Create, edit, delete, and view snippets with syntax highlighting
+- **AI Review**: Review draft code + syntax examples with Gemini before saving
+- **AI Fix Suggestions**: Generate corrected code and corrected syntax examples when review finds bugs
+- **Tags**: Add tags to snippets and filter/search by tags
+- **Collections**: Create collections, add snippets to collections, and remove them later
+- **Favorites**: Favorite snippets for quick access
+- **Likes**: Like public snippets
+- **Version History**: View previous versions of your snippets and restore a version
+- **Share Links**: Share public snippets via a link (private snippets cannot be shared)
 
 ### Technical Features
-- RESTful API with Express.js
-- MongoDB database with Mongoose ODM
-- JWT-based authentication
-- Swagger API documentation
-- Modern React with hooks and context API
-- Framer Motion animations
-- Tailwind CSS styling
+- REST API with Express + MongoDB (Mongoose)
+- JWT auth middleware
+- Gemini-powered draft review and code-fix suggestions
+- Swagger/OpenAPI docs at `http://localhost:5000/api-docs`
+- React (Vite) frontend with Context API
+- Tailwind CSS + Framer Motion UI polish
 
-##  Tech Stack
+## Tech Stack
 
 ### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js v5.2.1
-- **Database**: MongoDB with Mongoose v9.2.2
-- **Authentication**: JWT (jsonwebtoken v9.0.3) + bcryptjs v3.0.3
-- **API Documentation**: Swagger (swagger-jsdoc v6.2.8, swagger-ui-express v5.0.1)
-- **CORS**: cors v2.8.6
-- **Environment**: dotenv v17.3.1
+- Node.js, Express, MongoDB, Mongoose
+- JWT (`jsonwebtoken`) + password hashing (`bcryptjs`)
+- Google Gen AI SDK (`@google/genai`)
+- Swagger (`swagger-jsdoc`, `swagger-ui-express`)
 
 ### Frontend
-- **Framework**: React v19.2.0
-- **Build Tool**: Vite v7.3.1
-- **Routing**: React Router DOM v7.13.0
-- **Styling**: Tailwind CSS v4.2.0
-- **Animations**: Framer Motion v12.34.3
-- **HTTP Client**: Axios v1.13.5
-- **Icons**: Lucide React v0.575.0
-- **Code Highlighting**: react-syntax-highlighter v16.1.0
-- **Lottie Animations**: @lottiefiles/dotlottie-react v0.18.3
+- React, Vite, React Router
+- Tailwind CSS, Framer Motion
+- Axios, Lucide icons
+- `react-syntax-highlighter` (code highlighting)
+- Recharts (dashboard charts)
 
-##  Project Structure
+## Project Structure
 
-```
-snippetvault/
-├── backend/                    # Backend API server
-│   ├── config/                # Configuration files
-│   │   ├── db.js             # MongoDB connection
-│   │   └── swagger.js        # Swagger API documentation setup
-│   ├── controllers/          # Request handlers
-│   │   ├── authController.js # Authentication logic
-│   │   ├── snippetController.js # Snippet CRUD operations
-│   │   └── syntaxController.js  # Syntax management
-│   ├── middleware/           # Custom middleware
-│   │   └── authMiddleware.js # JWT authentication middleware
-│   ├── models/               # Mongoose schemas
-│   │   ├── User.js          # User model
-│   │   ├── Snippet.js       # Snippet model
-│   │   └── Syntax.js        # Syntax/Language model
-│   ├── routes/              # API routes
-│   │   ├── authRoutes.js    # Authentication endpoints
-│   │   ├── snippetRoutes.js # Snippet endpoints
-│   │   └── syntaxRoutes.js  # Syntax endpoints
-│   ├── scripts/             # Utility scripts
-│   │   └── seed.js         # Database seeding
-│   ├── .env                # Environment variables
-│   ├── .gitignore          # Git ignore rules
-│   ├── package.json        # Backend dependencies
-│   └── server.js           # Express server entry point
-│
-├── frontend/                # React frontend application
-│   ├── src/
-│   │   ├── components/     # Reusable React components
-│   │   │   ├── dashboard/  # Dashboard-specific components
-│   │   │   │   ├── DashboardHero.jsx
-│   │   │   │   ├── DashboardLayout.jsx
-│   │   │   │   ├── EmptyState.jsx
-│   │   │   │   ├── SnippetCard.jsx
-│   │   │   │   └── StatCard.jsx
-│   │   │   ├── explore/    # Explore page components
-│   │   │   │   └── ExploreSnippetCard.jsx
-│   │   │   ├── snippets/   # Snippet-related components
-│   │   │   │   └── MockEditor.jsx
-│   │   │   ├── Card.tsx    # Generic card component
-│   │   │   └── Navbar.jsx  # Navigation bar
-│   │   ├── constants/      # Application constants
-│   │   │   └── languages.js # Programming language definitions
-│   │   ├── context/        # React Context providers
-│   │   │   ├── AuthContext.jsx    # Authentication state
-│   │   │   └── SnippetContext.jsx # Snippet state management
-│   │   ├── pages/          # Page components
-│   │   │   ├── CreateSnippetPage.jsx
-│   │   │   ├── DashboardPage.jsx
-│   │   │   ├── EditSnippetPage.jsx
-│   │   │   ├── FavoritesPage.jsx
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── SignupPage.jsx
-│   │   │   ├── SnippetDetailPage.jsx
-│   │   │   └── SnippetSearchPage.jsx
-│   │   ├── public/         # Static assets
-│   │   │   ├── backgroundImage.png
-│   │   │   └── image.png
-│   │   ├── services/       # API service layer
-│   │   │   └── api.js     # Axios configuration
-│   │   ├── App.jsx        # Main app component
-│   │   ├── main.jsx       # React entry point
-│   │   └── index.css      # Global styles
-│   ├── .env               # Frontend environment variables
-│   ├── .gitignore         # Git ignore rules
-│   ├── eslint.config.js   # ESLint configuration
-│   ├── index.html         # HTML template
-│   ├── package.json       # Frontend dependencies
-│   ├── vite.config.js     # Vite configuration
-│   └── README.md          # Frontend documentation
-│
-├── node_modules/          # Root dependencies
-├── package.json           # Root package configuration
-├── package-lock.json      # Dependency lock file
-└── README.md             # This file
+```text
+SnippetVault/
+  backend/
+    config/
+    controllers/
+    middleware/
+    models/
+      Collection.js
+      Snippet.js
+      Syntax.js
+      User.js
+      Version.js
+    routes/
+      authRoutes.js
+      collectionRoutes.js
+      snippetRoutes.js
+      syntaxRoutes.js
+    scripts/
+      seed.js
+    .env
+    package.json
+    server.js
+  frontend/
+    src/
+      components/
+      constants/
+      context/
+      pages/
+      services/
+      App.jsx
+      main.jsx
+      index.css
+    .env
+    package.json
+    vite.config.js
+    README.md
 ```
 
 ## Getting Started
 
 ### Prerequisites
-
-- Node.js (v16 or higher)
+- Node.js (LTS recommended)
 - MongoDB (local or Atlas)
-- npm or yarn
+- npm
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone**
 ```bash
 git clone <repository-url>
-cd snippetvault
+cd SnippetVault
 ```
 
-2. **Install root dependencies**
-```bash
-npm install
-```
-
-3. **Setup Backend**
+2. **Backend dependencies**
 ```bash
 cd backend
 npm install
 ```
 
-4. **Setup Frontend**
+3. **Frontend dependencies**
+```bash
+cd ../frontend
+npm install
+```
+
+### Running the App (Dev)
+
+Run these in two separate terminals.
+
+1. **Start backend**
+```bash
+cd backend
+npm run dev
+```
+Backend: `http://localhost:5000`
+
+2. **Start frontend**
 ```bash
 cd frontend
-npm install
+npm run dev
 ```
+Frontend: `http://localhost:5173`
 
+3. **Swagger docs**
+- `http://localhost:5000/api-docs`
 
-5. **Seed the Database (Optional)**
+## AI Review Flow
+
+Create and edit pages now use a gated AI flow:
+
+1. Add title, language, code, and optional syntax example
+2. Click `AI Review`
+3. If the latest reviewed draft is bug-free, save is enabled
+4. If review finds issues, save stays disabled and `Suggest Fix` appears in the AI review card
+5. Apply the suggested fix, then run `AI Review` again until the draft is bug-free
+6. Save the snippet
+
+The page automatically scrolls to the AI review result after each review completes.
+
+## Environment Variables
+
+### Backend (`backend/.env`)
+- `PORT` (default: `5000`)
+- `MONGO_URI` (example: `mongodb://localhost:27017/SnippetVault`)
+- `JWT_SECRET` (set your own secret for real deployments)
+- `GEMINI_API_KEY` (required for AI review/fix features)
+- `GEMINI_MODEL` (optional; default: `gemini-2.5-flash`)
+
+### Frontend (`frontend/.env`)
+- `VITE_API_URL` (example: `http://localhost:5000/api`)
+
+## API Documentation
+
+Swagger is available at `http://localhost:5000/api-docs` when the backend is running.
+
+### Auth
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me` (protected)
+
+### Snippets
+- `GET /api/snippets` (public, paginated)
+  - Query params: `q`, `language`, `tags` (comma-separated), `status`, `sort`, `page`, `limit`
+- `GET /api/snippets/:id`
+- `POST /api/snippets` (protected)
+- `PUT /api/snippets/:id` (protected; stores a version before updating)
+- `DELETE /api/snippets/:id` (protected)
+- `GET /api/snippets/my` (protected)
+- `GET /api/snippets/favorites` (protected)
+- `POST /api/snippets/review` (protected; AI review on draft code before save)
+- `POST /api/snippets/assist` (protected; AI fix suggestions for draft code)
+- `POST /api/snippets/:id/like` (protected)
+- `POST /api/snippets/:id/favorite` (protected)
+- `GET /api/snippets/:id/history` (protected)
+- `POST /api/snippets/:id/restore/:versionId` (protected)
+
+### Collections (protected)
+- `POST /api/collections` (create)
+- `GET /api/collections` (list, includes snippets)
+- `POST /api/collections/:id/add` (add snippet)
+- `DELETE /api/collections/:id/remove/:snippetId` (remove snippet)
+
+### Syntaxes
+- `GET /api/syntaxes`
+- `POST /api/syntaxes` (protected)
+
+## Available Scripts
+
+### Backend (`backend/`)
 ```bash
-cd backend
+npm start
+npm run dev
 npm run seed
 ```
 
-### Running the Application
-
-1. **Start Backend Server**
+### Frontend (`frontend/`)
 ```bash
-cd backend
 npm run dev
-```
-Backend will run on `http://localhost:5000`
-
-2. **Start Frontend Development Server**
-```bash
-cd frontend
-npm run dev
-```
-Frontend will run on `http://localhost:5173`
-
-3. **Access the Application**
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:5000`
-- API Documentation: `http://localhost:5000/api-docs`
-
-##  API Documentation
-
-The API is documented using Swagger/OpenAPI. Once the backend server is running, visit:
-```
-http://localhost:5000/api-docs
+npm run build
+npm run preview
+npm run lint
 ```
 
-### Main API Endpoints
+## Data Models
 
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user (protected)
-
-#### Snippets
-- `GET /api/snippets` - Get all public snippets
-- `GET /api/snippets/:id` - Get snippet by ID
-- `POST /api/snippets` - Create new snippet (protected)
-- `PUT /api/snippets/:id` - Update snippet (protected)
-- `DELETE /api/snippets/:id` - Delete snippet (protected)
-- `PUT /api/snippets/:id/like` - Like/unlike snippet (protected)
-- `PUT /api/snippets/:id/favorite` - Favorite/unfavorite snippet (protected)
-- `GET /api/snippets/user/:userId` - Get user's snippets
-- `GET /api/snippets/favorites` - Get user's favorite snippets (protected)
-
-#### Syntaxes
-- `GET /api/syntaxes` - Get all syntax definitions
-- `POST /api/syntaxes` - Create syntax definition (protected)
-
-## 📜 Available Scripts
-
-### Backend
-```bash
-npm start       # Start production server
-npm run dev     # Start development server with nodemon
-npm run seed    # Seed database with sample data
-```
-
-### Frontend
-```bash
-npm run dev     # Start Vite development server
-npm run build   # Build for production
-npm run preview # Preview production build
-npm run lint    # Run ESLint
-```
-
-## 🗄 Database Models
-
-### User Model
-```javascript
+### User
+```js
 {
-  username: String (required, unique),
-  email: String (required, unique),
-  password: String (required, hashed),
+  username: String,
+  email: String,
+  password: String, // hashed
   createdAt: Date
 }
 ```
 
-### Snippet Model
-```javascript
+### Snippet
+```js
 {
-  title: String (required, max 100 chars),
-  code: String (required),
-  language: String (required),
-  syntax: ObjectId (ref: Syntax, optional),
-  syntaxCode: String (optional),
-  description: String (max 500 chars),
-  status: String (enum: ['public', 'private'], default: 'public'),
-  likes: Number (default: 0),
-  likedBy: [ObjectId] (ref: User),
-  favoritedBy: [ObjectId] (ref: User),
-  user: ObjectId (ref: User, required),
+  title: String,
+  code: String,
+  language: String,
+  tags: [String],
+  syntax: ObjectId, // ref: Syntax
+  description: String,
+  analysis: {
+    status: "pending" | "completed" | "failed" | "skipped",
+    isBugFree: Boolean | null,
+    summary: String,
+    issues: [{ severity: "high" | "medium" | "low", message: String }],
+    suggestions: [String],
+    checkedAt: Date,
+    model: String,
+    error: String
+  },
+  status: "public" | "private",
+  likes: Number,
+  likedBy: [ObjectId], // ref: User
+  favoritedBy: [ObjectId], // ref: User
+  user: ObjectId, // ref: User
   createdAt: Date
 }
 ```
 
-### Syntax Model
-```javascript
+### Syntax
+```js
 {
-  name: String (required),
-  code: String (required),
-  // Additional syntax-related fields
+  name: String,
+  id: String,        // e.g. "javascript"
+  syntaxCode: String // optional usage/call syntax
 }
 ```
 
-## Key Features Implementation
+### Collection
+```js
+{
+  name: String,
+  userId: ObjectId,    // ref: User
+  snippets: [ObjectId] // ref: Snippet
+}
+```
 
-### Authentication Flow
-1. User registers/logs in
-2. Backend generates JWT token
-3. Token stored in localStorage
-4. Token sent with protected requests via Authorization header
-5. Backend middleware validates token
+### Version
+```js
+{
+  snippetId: ObjectId, // ref: Snippet
+  title: String,
+  code: String,
+  language: String,
+  updatedAt: Date
+}
+```
 
-### Snippet Visibility
-- **Public**: Visible to all users in explore/search pages
-- **Private**: Only visible to the snippet owner
+## Contributing
 
-### Like System
-- Users can like/unlike snippets
-- Like count displayed on snippet cards
-- Liked snippets tracked in `likedBy` array
+- Fork the repo, create a feature branch, and open a PR.
+- Keep changes focused and update docs when behavior changes.
 
-### Favorite System
-- Users can favorite snippets for quick access
-- Favorites accessible from dedicated page
-- Tracked in `favoritedBy` array
+## Acknowledgments
 
-##  Acknowledgments
-
-- React and Vite communities
-- MongoDB and Mongoose documentation
-- Tailwind CSS team
-- All open-source contributors
-
---- 
+- React + Vite ecosystem
+- MongoDB + Mongoose docs
+- Tailwind CSS + Framer Motion communities

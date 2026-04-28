@@ -6,6 +6,7 @@ import api from "../services/api";
 import { useToast } from "../context/ToastContext";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import AnalysisSummaryCard from "../components/snippets/AnalysisSummaryCard";
 import {
   Edit,
   Download,
@@ -501,6 +502,11 @@ const SnippetDetailPage = () => {
             </div>
           </motion.div>
         )}
+
+        <AnalysisSummaryCard
+          analysis={snippet.analysis}
+          emptyMessage="No AI analysis has been saved for this snippet yet."
+        />
 
         {/* Toolbar */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-8 py-5 flex flex-wrap gap-6 items-center justify-between">

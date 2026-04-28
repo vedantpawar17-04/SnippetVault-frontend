@@ -1,4 +1,9 @@
-const MockEditor = ({ value, onChange, language = "Editor" }) => {
+const MockEditor = ({
+  value,
+  onChange,
+  language = "Editor",
+  placeholder = "// Paste or write your professional code here...",
+}) => {
   return (
     <div className="flex flex-col w-full border border-gray-100 rounded-2xl overflow-hidden bg-[#1e1e1e] shadow-xl">
       {/* Editor Header */}
@@ -30,7 +35,7 @@ const MockEditor = ({ value, onChange, language = "Editor" }) => {
             onChange={(e) => onChange(e.target.value)}
             className="w-full h-full p-4 bg-transparent resize-none border-none focus:ring-0 focus:outline-none text-[#d4d4d4] font-mono overflow-auto custom-scrollbar leading-[1.6]"
             spellCheck="false"
-            placeholder="// Paste or write your professional code here..."
+            placeholder={placeholder}
             style={{
               fontFamily: '"Fira Code", "Source Code Pro", monospace',
               fontSize: "16px",

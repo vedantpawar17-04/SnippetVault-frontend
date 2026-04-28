@@ -65,12 +65,6 @@ const DashboardPage = () => {
       .slice(0, 8);
   }, [snippets]);
 
-  const recentSnippets = useMemo(() => {
-    return [...(snippets || [])]
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .slice(0, 6);
-  }, [snippets]);
-
   const pieColors = [
     "#14b8a6",
     "#f97316",
